@@ -1,0 +1,142 @@
+schema: |-
+  definition user {}
+
+  definition organization {
+  	relation member: user
+  }
+
+  definition group {
+  	relation organization: organization
+  	relation member: user | group#member
+  	relation parent: group
+  }
+
+  definition policy {
+  	relation subject: user | group
+  	permission policy_holder = subject + subject->member
+  }
+
+  definition building {
+  	relation policy_read: policy
+  	permission read = policy_read->policy_holder
+  }
+
+  definition space {
+  	relation building: building
+  	relation policy_read: policy
+  	permission read = policy_read->policy_holder
+  }
+
+  definition resource_group {
+  	relation member: resource | space | building
+  	relation policy_read: policy
+  	relation policy_book: policy
+  	permission read = policy_read->policy_holder + policy_book->policy_holder
+  	permission book = policy_book->policy_holder
+  }
+
+  definition resource {
+  	relation resource_group: resource_group
+  	permission read = resource_group->read + resource_group->book
+  	permission book = resource_group->book
+  }
+relationships: |-
+  organization:1#member@user:1
+  organization:1#member@user:2
+  organization:1#member@user:3
+  organization:1#member@user:4
+  organization:1#member@user:5
+  organization:2#member@user:6
+  organization:2#member@user:7
+  organization:2#member@user:8
+  organization:2#member@user:9
+  organization:2#member@user:10
+
+  // chain Group
+  group:chain10#parent@group:chain9
+  group:chain9#parent@group:chain8
+  group:chain8#parent@group:chain7
+  group:chain7#parent@group:chain6
+  group:chain6#parent@group:chain5
+  group:chain5#parent@group:chain4
+  group:chain4#parent@group:chain3
+  group:chain3#parent@group:chain2
+  group:chain2#parent@group:chain1
+  group:chain1#member@user:chain1
+  group:chain10#member@user:chain10
+  resource_group:chain#policy_read@policy:chain
+  resource:chain#resource_group@resource_group:chain
+  policy:chain#subject@group:chain2
+
+  // group membership
+  group:org1#member@user:1
+  group:org1#member@user:2
+  group:org1#member@user:3
+  group:org1#member@user:4
+  group:org1#member@user:5
+  group:org2#member@user:6
+  group:org2#member@user:7
+  group:org2#member@user:8
+  group:org2#member@user:9
+  group:org2#member@user:10
+
+  // resource group resources
+  resource_group:org1#member@resource:1
+  resource_group:org1#member@resource:2
+  resource_group:org1#member@resource:3
+  resource_group:org1#member@resource:4
+  resource_group:org1#member@resource:5
+  resource_group:org2#member@resource:6
+  resource_group:org2#member@resource:7
+  resource_group:org2#member@resource:8
+  resource_group:org2#member@resource:9
+  resource_group:org2#member@resource:10
+
+  resource:1#resource_group@resource_group:org1
+  resource:2#resource_group@resource_group:org1
+  resource:3#resource_group@resource_group:org1
+  resource:4#resource_group@resource_group:org1
+  resource:5#resource_group@resource_group:org1
+  resource:6#resource_group@resource_group:org2
+  resource:7#resource_group@resource_group:org2
+  resource:8#resource_group@resource_group:org2
+  resource:9#resource_group@resource_group:org2
+  resource:10#resource_group@resource_group:org2
+  // reource group policies
+  resource_group:org1#policy_read@policy:org1-read
+  resource_group:org2#policy_book@policy:org2-book
+
+  // user group membership
+  policy:org1-read#subject@group:org1
+  policy:org2-book#subject@group:org2
+
+  // policy:3#subject@group:3
+  // policy:4#subject@group:4
+  // policy:5#subject@group:5
+  // policy:6#subject@group:6
+  // policy:7#subject@group:7
+  // policy:8#subject@group:8
+  // policy:9#subject@group:9
+  // policy:10#subject@group:10
+  // policy:11#subject@user:11
+assertions:
+  assertTrue:
+    - organization:1#member@user:1
+    - organization:2#member@user:10
+    - resource:1#read@user:1
+    - resource:1#read@user:2
+    - resource:1#read@user:3
+    - resource:1#read@user:4
+    - resource:1#read@user:5
+    - resource:2#read@user:1
+    - resource:3#read@user:1
+    - resource:6#read@user:6
+    - resource:6#book@user:6
+  assertFalse:
+    - resource:chain#read@user:chain1
+    - resource:1#book@user:1
+    - resource:1#book@user:2
+    - resource:1#book@user:3
+    - resource:1#book@user:4
+    - resource:1#book@user:5
+validation: {}
